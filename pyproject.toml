@@ -22,3 +22,6 @@ Homepage = "https://github.com/MukundaKatta/tool-result-validator-py"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+tool_result_validator = ["py.typed"]
