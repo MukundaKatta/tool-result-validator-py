@@ -1,6 +1,17 @@
 """Tests for tool-result-validator-py."""
+
 import pytest
-from tool_result_validator import ToolResultValidator, ValidationError, ValidationResult
+from tool_result_validator import (
+    ToolResultValidator,
+    ValidationError,
+    ValidationResult,
+    __version__,
+)
+
+
+def test_version_exposed():
+    assert isinstance(__version__, str)
+    assert __version__
 
 
 def test_empty_validator_passes():
@@ -118,6 +129,22 @@ def test_require_not_empty_none():
     v.require_not_empty()
     with pytest.raises(ValidationError):
         v.check(None)
+
+
+def test_require_not_empty_tuple():
+    v = ToolResultValidator()
+    v.require_not_empty()
+    v.check((1, 2))
+    with pytest.raises(ValidationError):
+        v.check(())
+
+
+def test_require_not_empty_set():
+    v = ToolResultValidator()
+    v.require_not_empty()
+    v.check({1, 2})
+    with pytest.raises(ValidationError):
+        v.check(set())
 
 
 def test_require_length_passes():

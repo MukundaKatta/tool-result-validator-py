@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+__version__ = "0.1.0"
+
 
 class ValidationError(Exception):
     """Raised when tool output fails validation."""
@@ -59,28 +61,39 @@ class ToolResultValidator:
 
     def require_type(self, *types: type, name: str = "type") -> "ToolResultValidator":
         """Require output to be an instance of one of the given types."""
+
         def v(output: Any) -> None:
             if not isinstance(output, types):
                 expected = " | ".join(t.__name__ for t in types)
-                raise ValidationError(name, f"Expected {expected}, got {type(output).__name__}")
+                raise ValidationError(
+                    name, f"Expected {expected}, got {type(output).__name__}"
+                )
+
         return self.add(name, v)
 
-    def require_keys(self, keys: list[str], name: str = "required_keys") -> "ToolResultValidator":
+    def require_keys(
+        self, keys: list[str], name: str = "required_keys"
+    ) -> "ToolResultValidator":
         """Require a dict output to contain all listed keys."""
+
         def v(output: Any) -> None:
             if not isinstance(output, dict):
                 raise ValidationError(name, "Output must be a dict to check keys")
             missing = [k for k in keys if k not in output]
             if missing:
                 raise ValidationError(name, f"Missing required keys: {missing}")
+
         return self.add(name, v)
 
     def require_value(
-        self, key: str, allowed: list[Any] | None = None,
+        self,
+        key: str,
+        allowed: list[Any] | None = None,
         disallowed: list[Any] | None = None,
         name: str = "value",
     ) -> "ToolResultValidator":
         """Validate the value of a specific dict key."""
+
         def v(output: Any) -> None:
             if not isinstance(output, dict):
                 raise ValidationError(name, "Output must be a dict to check values")
@@ -88,25 +101,40 @@ class ToolResultValidator:
                 raise ValidationError(name, f"Key '{key}' not found in output")
             val = output[key]
             if allowed is not None and val not in allowed:
-                raise ValidationError(name, f"'{key}' must be one of {allowed}, got {val!r}")
+                raise ValidationError(
+                    name, f"'{key}' must be one of {allowed}, got {val!r}"
+                )
             if disallowed is not None and val in disallowed:
-                raise ValidationError(name, f"'{key}' must not be one of {disallowed}, got {val!r}")
+                raise ValidationError(
+                    name, f"'{key}' must not be one of {disallowed}, got {val!r}"
+                )
+
         return self.add(name, v)
 
     def require_not_empty(self, name: str = "not_empty") -> "ToolResultValidator":
-        """Require output to be non-empty (string, list, or dict)."""
+        """Require output to be non-empty (string, list, tuple, set, or dict)."""
+
         def v(output: Any) -> None:
-            if isinstance(output, (str, list, dict)) and not output:
-                raise ValidationError(name, f"{type(output).__name__} must not be empty")
             if output is None:
                 raise ValidationError(name, "Output must not be None")
+            if (
+                isinstance(output, (str, list, tuple, set, frozenset, dict))
+                and not output
+            ):
+                raise ValidationError(
+                    name, f"{type(output).__name__} must not be empty"
+                )
+
         return self.add(name, v)
 
     def require_length(
-        self, min_len: int | None = None, max_len: int | None = None,
+        self,
+        min_len: int | None = None,
+        max_len: int | None = None,
         name: str = "length",
     ) -> "ToolResultValidator":
         """Require a string or list to have a length within the given range."""
+
         def v(output: Any) -> None:
             if not hasattr(output, "__len__"):
                 raise ValidationError(name, f"{type(output).__name__} has no length")
@@ -115,6 +143,7 @@ class ToolResultValidator:
                 raise ValidationError(name, f"Length {n} is below minimum {min_len}")
             if max_len is not None and n > max_len:
                 raise ValidationError(name, f"Length {n} exceeds maximum {max_len}")
+
         return self.add(name, v)
 
     def check(self, output: Any) -> Any:
@@ -143,7 +172,13 @@ class ToolResultValidator:
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = fn(*args, **kwargs)
             return self.check(result)
+
         return wrapper
 
 
-__all__ = ["ToolResultValidator", "ValidationError", "ValidationResult"]
+__all__ = [
+    "ToolResultValidator",
+    "ValidationError",
+    "ValidationResult",
+    "__version__",
+]
